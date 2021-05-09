@@ -25,6 +25,7 @@ import android.media.MediaDataSource;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Surface;
@@ -40,6 +41,7 @@ public class AlphaMovieView extends GLTextureView {
 
     private static final int NOT_DEFINED = -1;
     private static final int NOT_DEFINED_COLOR = 0;
+    private static final int TIME_DETECTION_INTERVAL_MS = 50;
 
     private static final String TAG = "VideoSurfaceView";
 
@@ -58,12 +60,32 @@ public class AlphaMovieView extends GLTextureView {
     private float accuracy;
     private int alphaColor;
     private boolean isPacked;
+    // When loopStartMs >= 0 and loopEndMs == -1, the video will jump back to loopStartMs
+    // once it reaches the end of the video
+    private long loopStartMs; // -1 means no specific loop points will be set
+    private long loopEndMs;
     private String shader;
 
     private boolean autoPlayAfterResume;
     private boolean playAfterResume;
 
     private PlayerState state = PlayerState.NOT_PREPARED;
+
+    final Handler handler = new Handler();
+    final Runnable timeDetector = new Runnable() {
+        public void run() {
+            int currentTimeMs = mediaPlayer.getCurrentPosition();
+            if (state == PlayerState.STARTED) {
+                startTimeDetector();
+            } else {
+                return;
+            }
+            if (loopStartMs >= 0 && loopEndMs >= 0 && currentTimeMs >= loopEndMs) {
+                // Handle looping when both loop start and end points are defined
+                mediaPlayer.seekTo(loopStartMs, MediaPlayer.SEEK_CLOSEST);
+            }
+        }
+    };
 
     public AlphaMovieView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -99,10 +121,14 @@ public class AlphaMovieView extends GLTextureView {
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
-                state = PlayerState.PAUSED;
                 if (onVideoEndedListener != null) {
                     onVideoEndedListener.onVideoEnded();
                 }
+                if (loopStartMs >= 0 && loopEndMs == -1) {
+                    mediaPlayer.seekTo(loopStartMs, MediaPlayer.SEEK_PREVIOUS_SYNC);
+                    return;
+                }
+                state = PlayerState.PAUSED;
             }
         });
     }
@@ -114,6 +140,8 @@ public class AlphaMovieView extends GLTextureView {
             this.alphaColor = arr.getColor(R.styleable.AlphaMovieView_alphaColor, NOT_DEFINED_COLOR);
             this.autoPlayAfterResume = arr.getBoolean(R.styleable.AlphaMovieView_autoPlayAfterResume, false);
             this.isPacked = arr.getBoolean(R.styleable.AlphaMovieView_packed, false);
+            this.loopStartMs = arr.getInteger(R.styleable.AlphaMovieView_loopStartMs, -1);
+            this.loopEndMs = arr.getInteger(R.styleable.AlphaMovieView_loopEndMs, -1);
             this.shader = arr.getString(R.styleable.AlphaMovieView_shader);
             arr.recycle();
             updateRendererOptions();
@@ -211,6 +239,14 @@ public class AlphaMovieView extends GLTextureView {
         renderer.setPacked(isPacked);
         updateRendererOptions();
         renderer.refreshShader();
+    }
+
+    public void setLoopStartMs(long startMs) {
+        this.loopStartMs = startMs;
+    }
+
+    public void setLoopEndMs(long endMs) {
+        this.loopEndMs = endMs;
     }
 
     public void setVideoFromAssets(String assetsFileName) {
@@ -348,11 +384,16 @@ public class AlphaMovieView extends GLTextureView {
         }
     }
 
+    private void startTimeDetector() {
+        handler.postDelayed(timeDetector, TIME_DETECTION_INTERVAL_MS);
+    }
+
     public void start() {
         if (mediaPlayer != null) {
             switch (state) {
                 case PREPARED:
                     mediaPlayer.start();
+                    startTimeDetector();
                     state = PlayerState.STARTED;
                     if (onVideoStartedListener != null) {
                         onVideoStartedListener.onVideoStarted();
@@ -360,6 +401,7 @@ public class AlphaMovieView extends GLTextureView {
                     break;
                 case PAUSED:
                     mediaPlayer.start();
+                    startTimeDetector();
                     state = PlayerState.STARTED;
                     break;
                 case STOPPED:
@@ -367,6 +409,7 @@ public class AlphaMovieView extends GLTextureView {
                         @Override
                         public void onPrepared(MediaPlayer mp) {
                             mediaPlayer.start();
+                            startTimeDetector();
                             state = PlayerState.STARTED;
                             if (onVideoStartedListener != null) {
                                 onVideoStartedListener.onVideoStarted();
