@@ -21,7 +21,7 @@ The easiest way to start using Alpha Movie is to add it as a *Gradle Dependency*
 
 ```gradle
 repositories {
-    jcenter()
+    mavenCentral()
 }
 ```
 
@@ -30,7 +30,7 @@ Then add this dependency to your module's `build.gradle` file:
 ```gradle
 dependencies {
     // ... other dependencies
-    compile 'com.alphamovie.library:alpha-movie:1.2.1'
+    implementation 'io.github.nopol10:alpha-movie:1.3.4'
 }
 ```
 
