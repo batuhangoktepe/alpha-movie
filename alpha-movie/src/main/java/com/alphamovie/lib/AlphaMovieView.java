@@ -61,7 +61,7 @@ public class AlphaMovieView extends GLTextureView {
     private int alphaColor;
     private boolean isPacked;
     // When loopStartMs >= 0 and loopEndMs == -1, the video will jump back to loopStartMs
-    // once it reaches the end of the video
+    // once it reaches the end of the video.
     private long loopStartMs; // -1 means no specific loop points will be set
     private long loopEndMs;
     private String shader;
@@ -74,15 +74,22 @@ public class AlphaMovieView extends GLTextureView {
     final Handler handler = new Handler();
     final Runnable timeDetector = new Runnable() {
         public void run() {
-            int currentTimeMs = mediaPlayer.getCurrentPosition();
-            if (state == PlayerState.STARTED) {
-                startTimeDetector();
-            } else {
+            if (getRootView() == null) {
                 return;
             }
-            if (loopStartMs >= 0 && loopEndMs >= 0 && currentTimeMs >= loopEndMs) {
-                // Handle looping when both loop start and end points are defined
-                mediaPlayer.seekTo(loopStartMs, MediaPlayer.SEEK_CLOSEST);
+            try {
+                int currentTimeMs = mediaPlayer.getCurrentPosition();
+                if (state == PlayerState.STARTED) {
+                    startTimeDetector();
+                } else {
+                    return;
+                }
+                if (loopStartMs >= 0 && loopEndMs >= 0 && currentTimeMs >= loopEndMs) {
+                    // Handle looping when both loop start and end points are defined
+                    mediaPlayer.seekTo(loopStartMs, MediaPlayer.SEEK_CLOSEST);
+                }
+            } catch (Exception exception) {
+                Log.e("AlphaMovieView", "Time detector error. Did you forget to call AlphaMovieView's onPause in the containing fragment/activity? | " + exception.getMessage());
             }
         }
     };
@@ -358,6 +365,7 @@ public class AlphaMovieView extends GLTextureView {
     @Override
     public void onPause() {
         super.onPause();
+        handler.removeCallbacks(timeDetector);
         if (isPlaying() && autoPlayAfterResume) {
             playAfterResume = true;
         }
