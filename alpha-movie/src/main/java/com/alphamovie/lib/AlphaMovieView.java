@@ -25,6 +25,7 @@ import android.media.MediaDataSource;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -64,6 +65,9 @@ public class AlphaMovieView extends GLTextureView {
     // once it reaches the end of the video.
     private long loopStartMs; // -1 means no specific loop points will be set
     private long loopEndMs;
+    // This should be populated with a MediaPlayer.SEEK_* constant
+    // Only for API 26 and above
+    private int loopSeekingMethod = 0;
     private String shader;
 
     private boolean autoPlayAfterResume;
@@ -86,7 +90,11 @@ public class AlphaMovieView extends GLTextureView {
                 }
                 if (loopStartMs >= 0 && loopEndMs >= 0 && currentTimeMs >= loopEndMs) {
                     // Handle looping when both loop start and end points are defined
-                    mediaPlayer.seekTo(loopStartMs, MediaPlayer.SEEK_CLOSEST);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        mediaPlayer.seekTo(loopStartMs, loopSeekingMethod);
+                    } else {
+                        mediaPlayer.seekTo((int) loopStartMs);
+                    }
                 }
             } catch (Exception exception) {
                 Log.e("AlphaMovieView", "Time detector error. Did you forget to call AlphaMovieView's onPause in the containing fragment/activity? | " + exception.getMessage());
@@ -132,7 +140,12 @@ public class AlphaMovieView extends GLTextureView {
                     onVideoEndedListener.onVideoEnded();
                 }
                 if (loopStartMs >= 0 && loopEndMs == -1) {
-                    mediaPlayer.seekTo(loopStartMs, MediaPlayer.SEEK_PREVIOUS_SYNC);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        mediaPlayer.seekTo(loopStartMs, loopSeekingMethod);
+                    } else {
+                        mediaPlayer.seekTo((int) loopStartMs);
+                    }
+                    mediaPlayer.start();
                     return;
                 }
                 state = PlayerState.PAUSED;
@@ -149,6 +162,11 @@ public class AlphaMovieView extends GLTextureView {
             this.isPacked = arr.getBoolean(R.styleable.AlphaMovieView_packed, false);
             this.loopStartMs = arr.getInteger(R.styleable.AlphaMovieView_loopStartMs, -1);
             this.loopEndMs = arr.getInteger(R.styleable.AlphaMovieView_loopEndMs, -1);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                this.loopSeekingMethod = arr.getInteger(R.styleable.AlphaMovieView_loopSeekingMethod, MediaPlayer.SEEK_CLOSEST_SYNC);
+            } else {
+                this.loopSeekingMethod = 0;
+            }
             this.shader = arr.getString(R.styleable.AlphaMovieView_shader);
             arr.recycle();
             updateRendererOptions();
@@ -508,6 +526,14 @@ public class AlphaMovieView extends GLTextureView {
 
     public void setOnSeekCompleteListener(MediaPlayer.OnSeekCompleteListener onSeekCompleteListener) {
         mediaPlayer.setOnSeekCompleteListener(onSeekCompleteListener);
+    }
+
+    public void setLoopSeekingMethod(int loopSeekingMethod) {
+        this.loopSeekingMethod = loopSeekingMethod;
+    }
+
+    public int getLoopSeekingMethod() {
+        return this.loopSeekingMethod;
     }
 
     public MediaPlayer getMediaPlayer() {
