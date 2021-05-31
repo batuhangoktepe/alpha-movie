@@ -95,7 +95,7 @@ This results in a video that can now be processed by the alpha packed video shad
 To generate and play such a video from an existing transparent webm video, do the following:
 
 1. Download [ffmpeg](https://ffmpeg.org/download.html). The most recent version is recommended but anything after 20th July 2016 should work.
-1. Run `ffmpeg -vcodec libvpx -i input_video.webm -vf "split [a], pad=iw*2:ih [b], [a] alphaextract, [b] overlay=w" -y output_video.mp4`
+1. Run `ffmpeg -vcodec libvpx -i input_video.webm -vf "split [a], pad=iw*2:ih [b], [a] alphaextract, [b] overlay=w" -x264opts keyint=30 -y output_video.mp4`
     This will generate the `output_video.mp4` file in the directory containing `input_video.webm`
 1. Put `output_video.mp4` in your assets and follow the steps above to load the video into the AlphaMovieView.
 1. Change the xml to the following
