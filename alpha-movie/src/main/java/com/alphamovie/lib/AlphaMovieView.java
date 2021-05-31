@@ -132,7 +132,6 @@ public class AlphaMovieView extends GLTextureView {
         mediaPlayer = new MediaPlayer();
         setScreenOnWhilePlaying(true);
         setLooping(true);
-
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
@@ -162,6 +161,7 @@ public class AlphaMovieView extends GLTextureView {
             this.isPacked = arr.getBoolean(R.styleable.AlphaMovieView_packed, false);
             this.loopStartMs = arr.getInteger(R.styleable.AlphaMovieView_loopStartMs, -1);
             this.loopEndMs = arr.getInteger(R.styleable.AlphaMovieView_loopEndMs, -1);
+            updateMediaPlayerLoopSetting();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 this.loopSeekingMethod = arr.getInteger(R.styleable.AlphaMovieView_loopSeekingMethod, MediaPlayer.SEEK_CLOSEST_SYNC);
             } else {
@@ -266,12 +266,23 @@ public class AlphaMovieView extends GLTextureView {
         renderer.refreshShader();
     }
 
-    public void setLoopStartMs(long startMs) {
-        this.loopStartMs = startMs;
+    private void updateMediaPlayerLoopSetting() {
+        if (loopStartMs >= 0 || loopEndMs >= 0) {
+            // Disable MediaPlayer's built in looping if manual loop section is specified
+            setLooping(false);
+        }
     }
 
+    // Sets the start point of a loop. If >= 0, will override any setting set via mediaPlayer.setLooping
+    public void setLoopStartMs(long startMs) {
+        this.loopStartMs = startMs;
+        updateMediaPlayerLoopSetting();
+    }
+
+    // Sets the end point of a loop. If >= 0, will override any setting set via mediaPlayer.setLooping
     public void setLoopEndMs(long endMs) {
         this.loopEndMs = endMs;
+        updateMediaPlayerLoopSetting();
     }
 
     public void setVideoFromAssets(String assetsFileName) {
