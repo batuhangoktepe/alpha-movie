@@ -3,7 +3,6 @@
 buildscript {
     repositories {
         google()
-        jcenter()
         mavenCentral()
     }
     dependencies {
@@ -14,13 +13,9 @@ buildscript {
     }
 }
 
-plugins {
-    id "com.github.dcendents.android-maven" version "1.5"
-}
-
 allprojects {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
     }
 }
