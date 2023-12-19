@@ -228,6 +228,7 @@ public class GLTextureView
         mRenderer = renderer;
         mGLThread = new GLThread(mThisWeakRef);
         mGLThread.start();
+
     }
 
     /**

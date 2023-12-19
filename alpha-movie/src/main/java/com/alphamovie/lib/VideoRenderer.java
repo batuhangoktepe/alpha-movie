@@ -112,6 +112,8 @@ class VideoRenderer implements GLTextureView.Renderer, SurfaceTexture.OnFrameAva
 
     private OnSurfacePrepareListener onSurfacePrepareListener;
 
+    private OnSurfaceListener onSurfaceListener;
+
     private boolean isCustom;
 
     /**
@@ -180,7 +182,9 @@ class VideoRenderer implements GLTextureView.Renderer, SurfaceTexture.OnFrameAva
         checkGlError("glDrawArrays");
 
         GLES20.glFinish();
+
     }
+
 
     @Override
     public void onSurfaceDestroyed(GL10 gl) {
@@ -254,6 +258,7 @@ class VideoRenderer implements GLTextureView.Renderer, SurfaceTexture.OnFrameAva
     }
 
     synchronized public void onFrameAvailable(SurfaceTexture surface) {
+        onSurfaceListener.surfaceCreated(surface);
         updateSurface = true;
     }
 
@@ -353,8 +358,16 @@ class VideoRenderer implements GLTextureView.Renderer, SurfaceTexture.OnFrameAva
         this.onSurfacePrepareListener = onSurfacePrepareListener;
     }
 
+    void setOnSurfaceListener(OnSurfaceListener onSurfaceListener) {
+        this.onSurfaceListener = onSurfaceListener;
+    }
+
     interface OnSurfacePrepareListener {
         void surfacePrepared(Surface surface);
+    }
+
+    interface OnSurfaceListener {
+        void surfaceCreated(SurfaceTexture surface);
     }
 
 }

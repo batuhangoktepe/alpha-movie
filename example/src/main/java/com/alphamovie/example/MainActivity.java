@@ -17,7 +17,9 @@
 package com.alphamovie.example;
 
 import android.graphics.PixelFormat;
+import android.graphics.SurfaceTexture;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -39,6 +41,9 @@ public class MainActivity extends AppCompatActivity {
     private AlphaMovieView alphaMovieView;
 
     private ImageView imageViewBackground;
+
+    private ImageView imageViewBackgroundNew;
+
     private int bgIndex = FIRST_BG_INDEX;
     private boolean isPacked = false;
 
@@ -49,9 +54,23 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         imageViewBackground = (ImageView) findViewById(R.id.image_background);
+        imageViewBackgroundNew = (ImageView) findViewById(R.id.image_background_new);
 
         alphaMovieView = (AlphaMovieView) findViewById(R.id.video_player);
         alphaMovieView.setVideoFromAssets(FILENAME);
+
+        alphaMovieView.setOnNewSurfaceListener(new AlphaMovieView.OnNewSurfaceListener() {
+            @Override
+            public void onNewSurface(SurfaceTexture surface) {
+                // do something
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        imageViewBackgroundNew.setImageBitmap(alphaMovieView.getBitmap());
+                    }
+                });
+            }
+        });
     }
 
     @Override

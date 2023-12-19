@@ -21,6 +21,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.TypedArray;
+import android.graphics.SurfaceTexture;
 import android.media.MediaDataSource;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
@@ -54,6 +55,8 @@ public class AlphaMovieView extends GLTextureView {
 
     private OnVideoStartedListener onVideoStartedListener;
     private OnVideoEndedListener onVideoEndedListener;
+
+    private OnNewSurfaceListener onNewSurfaceListener;
 
     private boolean isSurfaceCreated;
     private boolean isDataSourceSet;
@@ -197,6 +200,16 @@ public class AlphaMovieView extends GLTextureView {
                     if (isDataSourceSet) {
                         prepareAndStartMediaPlayer();
                     }
+                }
+            });
+
+            renderer.setOnSurfaceListener(new VideoRenderer.OnSurfaceListener() {
+                @Override
+                public void surfaceCreated(SurfaceTexture surface) {
+                    if (onNewSurfaceListener != null) {
+                        onNewSurfaceListener.onNewSurface(surface);
+                    }
+                    Log.e("AlphaMovieView", "Surface created");
                 }
             });
         }
@@ -527,6 +540,10 @@ public class AlphaMovieView extends GLTextureView {
         mediaPlayer.setOnErrorListener(onErrorListener);
     }
 
+    public void setOnNewSurfaceListener(OnNewSurfaceListener onNewSurfaceListener) {
+        this.onNewSurfaceListener = onNewSurfaceListener;
+    }
+
     public void setOnVideoStartedListener(OnVideoStartedListener onVideoStartedListener) {
         this.onVideoStartedListener = onVideoStartedListener;
     }
@@ -557,6 +574,10 @@ public class AlphaMovieView extends GLTextureView {
 
     public interface OnVideoEndedListener {
         void onVideoEnded();
+    }
+
+    public interface OnNewSurfaceListener {
+        void onNewSurface(SurfaceTexture surfaceTexture);
     }
 
     private enum PlayerState {
