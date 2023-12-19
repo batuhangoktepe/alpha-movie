@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+group='com.github.batuhangoktepe'
 
 android {
     compileSdkVersion 30
